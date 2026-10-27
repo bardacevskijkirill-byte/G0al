@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080b12">
+<title>G0al — Football Live</title>
+<style>
+:root{--bg:#080b12;--panel:#111722;--line:#263142;--green:#b7ff65;--muted:#8e9aab}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif}
+header{padding:22px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#080b12f5;z-index:5}
+.brand{font-size:30px;font-weight:900;letter-spacing:-1px}
+.brand span{color:var(--green)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+select,button{background:var(--panel);color:white;border:1px solid var(--line);padding:10px 12px;border-radius:10px;font-size:14px}
+nav{display:flex;gap:8px;overflow-x:auto;padding:14px 16px;border-bottom:1px solid var(--line)}
+nav button{white-space:nowrap}
+nav button.active{background:var(--green);color:#10150b;border-color:var(--green);font-weight:800}
+main{padding:20px 16px;max-width:850px;margin:auto}
+h1{font-size:29px;margin:10px 0}
+.subtitle{color:var(--muted);font-size:14px;margin-bottom:24px}
+.section-title{font-size:18px;font-weight:800;margin:25px 0 12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:10px 0}
+.league{color:var(--muted);font-size:12px;margin-bottom:14px}
+.match{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.team{text-align:center;font-weight:700}
+.score{font-size:22px;font-weight:900;text-align:center}
+.status{font-size:11px;color:var(--green);text-align:center;margin-top:5px}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:30px;padding:6px 10px;color:var(--muted);font-size:12px}
+.empty{padding:25px 10px;text-align:center;color:var(--muted);line-height:1.7}
+footer{text-align:center;padding:30px;color:var(--muted);font-size:12px}
+.green{color:var(--green)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:12px 5px;text-align:center;border-bottom:1px solid var(--line)}
+td:nth-child(2),th:nth-child(2){text-align:left}
+@media(min-width:600px){main{padding:30px 24px}.brand{font-size:34px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="top">
+  <div class="brand">G<span>0</span>al<span>.</span></div>
+  <select id="lang" aria-label="Language">
+   <option value="ru">Русский</option>
+   <option value="uk">Українська</option>
+   <option value="en">English</option>
+  </select>
+ </div>
+</header>
+<nav id="nav"></nav>
+<main>
+ <div class="pill"><span class="green">●</span> <span id="liveLabel">ФУТБОЛЬНЫЙ ЦЕНТР</span></div>
+ <h1 id="heading">Футбол. В одном месте.</h1>
+ <div class="subtitle" id="subheading">Матчи, результаты, таблицы и последние новости</div>
+ <div class="section-title" id="sectionTitle">Сегодняшние матчи</div>
+ <div id="content"></div>
+</main>
+<footer>G0al © 2026 · <span id="footerText">Весь футбол в одном месте</span></footer>
+<script>
+const translations={
+ ru:{tabs:["Результаты","Таблицы","Новости","Трансферы"],heading:"Футбол. В одном месте.",sub:"Матчи, результаты, таблицы и последние новости",title:["Сегодняшние матчи","Турнирные таблицы","Новости футбола","Последние трансферы"],empty:"Футбольные данные появятся после подключения API.",note:"Это пока демонстрационная версия. Реальные данные ещё не подключены.",footer:"Весь футбол в одном месте"},
+ uk:{tabs:["Результати","Таблиці","Новини","Трансфери"],heading:"Футбол. В одному місці.",sub:"Матчі, результати, таблиці та останні новини",title:["Сьогоднішні матчі","Турнірні таблиці","Футбольні новини","Останні трансфери"],empty:"Футбольні дані з’являться після підключення API.",note:"Це демонстраційна версія. Реальні дані ще не підключені.",footer:"Увесь футбол в одному місці"},
+ en:{tabs:["Scores","Standings","News","Transfers"],heading:"Football. All in one place.",sub:"Matches, scores, standings and the latest news",title:["Today's matches","League standings","Football news","Latest transfers"],empty:"Football data will appear after the API is connected.",note:"This is a demo version. Live data is not connected yet.",footer:"All football in one place"}
+};
+let page=0;
+const nav=document.getElementById("nav");
+const content=document.getElementById("content");
+function render(){
+ const t=translations[document.getElementById("lang").value];
+ document.documentElement.lang=document.getElementById("lang").value;
+ document.getElementById("heading").textContent=t.heading;
+ document.getElementById("subheading").textContent=t.sub;
+ document.getElementById("sectionTitle").textContent=t.title[page];
+ document.getElementById("footerText").textContent=t.footer;
+ nav.innerHTML="";
+ t.tabs.forEach((label,i)=>{
+  const b=document.createElement("button");
+  b.textContent=label;b.className=i===page?"active":"";
+  b.onclick=()=>{page=i;render()};
+  nav.appendChild(b);
+ });
+ content.innerHTML="";
+ const card=document.createElement("div");
+ card.className="card empty";
+ card.innerHTML='<div style="font-size:32px;margin-bottom:10px">⚽</div>';
+ const message=document.createElement("div");
+ message.textContent=t.empty;
+ card.appendChild(message);
+ const note=document.createElement("p");
+ note.style.fontSize="12px";note.style.marginTop="15px";
+ note.textContent=t.note;card.appendChild(note);
+ content.appendChild(card);
+}
+document.getElementById("lang").addEventListener("change",render);
+render();
+</script>
+</body>
+</html>
