@@ -1,0 +1,73 @@
+
+const express = require("express");
+const path = require("path");
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const API_KEY = process.env.API_FOOTBALL_KEY;
+
+app.use(express.static(path.join(__dirname)));
+
+const API_BASE = "https://v3.football.api-sports.io";
+
+async function footballAPI(endpoint) {
+  if (!API_KEY) {
+    throw new Error("API_FOOTBALL_KEY is not configured");
+  }
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    headers: { "x-apisports-key": API_KEY }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Football API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (data.errors && Object.keys(data.errors).length) {
+    throw new Error("Football API returned an error");
+  }
+
+  return data.response;
+}
+
+app.get("/api/fixtures", async (req, res) => {
+  try {
+    const date = req.query.date || new Date().toISOString().slice(0, 10);
+    const fixtures = await footballAPI(
+      `/fixtures?date=${encodeURIComponent(date)}`
+    );
+    res.json(fixtures);
+  } catch (error) {
+    console.error(error.message);
+    res.status(502).json({ error: "Не удалось загрузить матчи" });
+  }
+});
+
+app.get("/api/standings", async (req, res) => {
+  try {
+    const league = Number(req.query.league || 39);
+    const season = Number(req.query.season || new Date().getFullYear());
+
+    if (!Number.isInteger(league) || !Number.isInteger(season)) {
+      return res.status(400).json({ error: "Неверная лига или сезон" });
+    }
+
+    const standings = await footballAPI(
+      `/standings?league=${league}&season=${season}`
+    );
+    res.json(standings);
+  } catch (error) {
+    console.error(error.message);
+    res.status(502).json({ error: "Не удалось загрузить таблицу" });
+  }
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, apiKeyConfigured: Boolean(API_KEY) });
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`G0al server running on port ${PORT}`);
+});
